@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using CodeChallenge.Models;
 using Microsoft.Extensions.Logging;
 using CodeChallenge.Repositories;
+using Microsoft.AspNetCore.Mvc.Diagnostics;
+#nullable enable //adding for null references
 
 namespace CodeChallenge.Services
 {
@@ -21,7 +23,7 @@ namespace CodeChallenge.Services
 
         public Employee Create(Employee employee)
         {
-            if(employee != null)
+            if (employee != null)
             {
                 _employeeRepository.Add(employee);
                 _employeeRepository.SaveAsync().Wait();
@@ -32,17 +34,18 @@ namespace CodeChallenge.Services
 
         public Employee GetById(string id)
         {
-            if(!String.IsNullOrEmpty(id))
+            if (!String.IsNullOrEmpty(id))
             {
                 return _employeeRepository.GetById(id);
             }
 
             return null;
         }
+        
 
         public Employee Replace(Employee originalEmployee, Employee newEmployee)
         {
-            if(originalEmployee != null)
+            if (originalEmployee != null)
             {
                 _employeeRepository.Remove(originalEmployee);
                 if (newEmployee != null)
@@ -59,5 +62,51 @@ namespace CodeChallenge.Services
 
             return newEmployee;
         }
+
+        //helper functiomn that recursivly counts the reports for an employee and its "children"
+        private int CountReports(Employee employee)
+        {
+            if (employee == null || employee.DirectReports == null || employee.DirectReports.Count == 0)
+                return 0;
+
+            var total = 0;
+
+            foreach (var emp in employee.DirectReports)
+            {
+                if (emp == null || string.IsNullOrWhiteSpace(emp.EmployeeId))
+                    continue;
+
+                var child = _employeeRepository.GetByIdWithReports(emp.EmployeeId);
+                if (child != null)
+                {
+                    total += 1;
+                    total += CountReports(child); //counting reports of "children" employees  
+                }
+            }
+
+            return total;
+        }
+
+        //Function that gathers employee ID and calls count reports to return a type with the necessary data (takes an employee ID string)
+        public ReportingStructure? GetReportingStructure(string employeeId)
+        {
+            if (string.IsNullOrWhiteSpace(employeeId))
+                return null;
+
+            var employee = _employeeRepository.GetByIdWithReports(employeeId);
+
+            if (employee == null)
+                return null;
+
+            var reports = CountReports(employee);
+
+            return new ReportingStructure
+            {
+                Employee = employee,
+                NumberOfReports = reports
+            };
+
+        }
+
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using CodeChallenge.Services;
 using CodeChallenge.Models;
+using System.Reflection.Metadata.Ecma335;
 
 namespace CodeChallenge.Controllers
 {
@@ -46,7 +47,7 @@ namespace CodeChallenge.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult ReplaceEmployee(String id, [FromBody]Employee newEmployee)
+        public IActionResult ReplaceEmployee(String id, [FromBody] Employee newEmployee)
         {
             _logger.LogDebug($"Recieved employee update request for '{id}'");
 
@@ -57,6 +58,20 @@ namespace CodeChallenge.Controllers
             _employeeService.Replace(existingEmployee, newEmployee);
 
             return Ok(newEmployee);
+        }
+
+        [HttpGet("{id}/reportingStructure")]
+        public IActionResult GetReportingStructure(string id)
+        {
+            _logger.LogDebug($"Recieved reporting structure request for '{id}'");
+
+            var employee = _employeeService.GetById(id);
+
+            if (employee == null)
+                return NotFound();
+
+            var result = _employeeService.GetReportingStructure(id);
+            return Ok(result); 
         }
     }
 }

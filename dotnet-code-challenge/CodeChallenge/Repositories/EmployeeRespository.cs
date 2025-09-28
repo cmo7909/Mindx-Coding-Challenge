@@ -6,6 +6,7 @@ using CodeChallenge.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using CodeChallenge.Data;
+using System.Runtime.CompilerServices;
 
 namespace CodeChallenge.Repositories
 {
@@ -30,6 +31,15 @@ namespace CodeChallenge.Repositories
         public Employee GetById(string id)
         {
             return _employeeContext.Employees.SingleOrDefault(e => e.EmployeeId == id);
+        }
+
+        //Could not load direct reports without a new get by ID method, this method returns the reports to be used by my new methods
+        public Employee GetByIdWithReports(String id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return null;
+
+            return _employeeContext.Employees.Include(e => e.DirectReports).SingleOrDefault(e => e.EmployeeId == id); //includes direct reports when called
         }
 
         public Task SaveAsync()

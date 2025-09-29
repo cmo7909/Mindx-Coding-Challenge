@@ -24,7 +24,7 @@ public class CompensationRepositories : ICompensationRepository
         return comp;
     }
 
-    // controller to return the full employee object in the JSON response.
+    // controller to return the full employee object in the JSON response
     public Compensation GetByEmployeeId(string employeeId)
     {
         if (string.IsNullOrWhiteSpace(employeeId))

@@ -34,14 +34,30 @@ namespace CodeChallenge.Repositories
         }
 
         //Could not load direct reports without a new get by ID method, this method returns the reports to be used by my new methods
-        public Employee GetByIdWithReports(String id)
+        //Altered after unit tests failed
+        public Employee GetByIdWithReports(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
                 return null;
 
-            return _employeeContext.Employees.Include(e => e.DirectReports).SingleOrDefault(e => e.EmployeeId == id); //includes direct reports when called
-        }
+            var emp = _employeeContext.Employees
+                .Include(e => e.DirectReports)
+                .SingleOrDefault(e => e.EmployeeId == id);
 
+            if (emp == null) return null;
+
+            if (emp.DirectReports == null || emp.DirectReports.Count == 0)
+            {
+                var children = _employeeContext.Employees
+                    .Where(e => EF.Property<string>(e, "EmployeeId1") == id)
+                    .ToList();
+
+                if (children.Count > 0)
+                    emp.DirectReports = children;
+            }
+
+            return emp;
+        }
         public Task SaveAsync()
         {
             return _employeeContext.SaveChangesAsync();

@@ -50,11 +50,11 @@ namespace CodeChallenge.Services
                 _employeeRepository.Remove(originalEmployee);
                 if (newEmployee != null)
                 {
-                    // ensure the original has been removed, otherwise EF will complain another entity w/ same id already exists
+                    // ensure the original has been removed
                     _employeeRepository.SaveAsync().Wait();
 
                     _employeeRepository.Add(newEmployee);
-                    // overwrite the new id with previous employee id
+                    
                     newEmployee.EmployeeId = originalEmployee.EmployeeId;
                 }
                 _employeeRepository.SaveAsync().Wait();
@@ -66,26 +66,28 @@ namespace CodeChallenge.Services
         //helper functiomn that recursivly counts the reports for an employee and its "children"
         private int CountReports(Employee employee)
         {
-            if (employee == null || employee.DirectReports == null || employee.DirectReports.Count == 0)
+            if (employee == null || string.IsNullOrWhiteSpace(employee.EmployeeId))
+                return 0;
+
+            
+            var current = _employeeRepository.GetByIdWithReports(employee.EmployeeId);
+            if (current?.DirectReports == null || current.DirectReports.Count == 0)
                 return 0;
 
             var total = 0;
 
-            foreach (var emp in employee.DirectReports)
+            foreach (var emp in current.DirectReports)
             {
                 if (emp == null || string.IsNullOrWhiteSpace(emp.EmployeeId))
                     continue;
 
-                var child = _employeeRepository.GetByIdWithReports(emp.EmployeeId);
-                if (child != null)
-                {
-                    total += 1;
-                    total += CountReports(child); //counting reports of "children" employees  
-                }
+                total += 1;            
+                total += CountReports(emp); 
             }
 
             return total;
         }
+
 
         //Function that gathers employee ID and calls count reports to return a type with the necessary data (takes an employee ID string)
         public ReportingStructure? GetReportingStructure(string employeeId)
